@@ -141,4 +141,5 @@ function initRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognit
 function startRec(){if(!rec||recOn||speaking)return;rec.lang=lang=="he"?"he-IL":"en-US";try{rec.start();recOn=true;$("mic").classList.add("on");if(!paused)$("mic").textContent="🎤 מקשיב..."}catch(e){}}
 function stopRec(){if(rec&&recOn){try{rec.abort()}catch(e){}recOn=false;$("mic").classList.remove("on");$("mic").textContent="🔊 מקריא..."}}
 speechSynthesis.onvoiceschanged=()=>{};home();
+const APPV="10";fetch(location.pathname+"?nc="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APPV="(\d+)"/);if(m&&m[1]!==APPV&&!sessionStorage.getItem("rl"+m[1])){sessionStorage.setItem("rl"+m[1],1);location.replace(location.pathname+"?v="+m[1])}}).catch(()=>{});
 </script></body></html>
