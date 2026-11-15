@@ -29,11 +29,16 @@ small{color:#667}
 <input type="password" id="lpass" placeholder="סיסמה" style="width:100%;padding:12px;font-size:18px;border:1px solid var(--line);border-radius:8px;margin-bottom:10px" onkeydown="if(event.key=='Enter')login()">
 <button class="btn" style="width:100%" onclick="login()">כניסה</button>
 <p><small>משתמש חדש? פשוט כותבים שם וסיסמה, והחשבון נוצר אוטומטית.</small></p></div>
-<div id="userbar" class="row hide" style="justify-content:space-between;margin-bottom:10px"><b id="uname"></b><button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="logout()">יציאה</button></div>
+<div id="userbar" class="row hide" style="justify-content:space-between;margin-bottom:10px"><b id="uname"></b><span><button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="showLangs()" id="lpair">🌍</button> <button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="logout()">יציאה</button></span></div>
+<div id="langs" class="box hide" style="max-width:520px;margin:20px auto;text-align:center">
+<h2 style="margin-top:0">🌍 בחר שפות</h2>
+<div style="text-align:right"><b>אני רוצה לתרגל (שפת הטקסט):</b><select id="lsrc" style="width:100%;padding:12px;font-size:18px;margin:6px 0 14px;border-radius:8px"></select>
+<b>התרגום יופיע ב:</b><select id="ldst" style="width:100%;padding:12px;font-size:18px;margin:6px 0 14px;border-radius:8px"></select></div>
+<button class="btn" style="width:100%" onclick="saveLangs()">המשך ←</button></div>
 <div id="plbox" class="box hide"><b>📚 רשימת ההשמעה שלי</b><div id="pl"></div></div>
 <div id="setup" class="box hide">
-<b>1. הדבק טקסט באנגלית</b> <small>(מאמר, שיר, כל דבר)</small>
-<textarea id="txt" placeholder="Paste your English text here..."></textarea>
+<b>1. הדבק טקסט ב<span id="srcname">אנגלית</span></b> <small>(מאמר, שיר, כל דבר)</small>
+<textarea id="txt" placeholder="Paste your text here..."></textarea>
 <div class="row"><b>או קישור למאמר:</b></div>
 <div class="row"><input type="url" id="url" placeholder="https://..."><button class="btn sec" onclick="loadUrl()">טען מהקישור</button></div>
 <div id="urlmsg"><small></small></div>
@@ -48,7 +53,7 @@ small{color:#667}
 <div class="row" style="justify-content:space-between"><span id="prog"></span><span id="mic">🎤 כבוי</span></div>
 <div id="sent"></div>
 <div id="tr" style="direction:rtl;text-align:left;font-size:26px;line-height:1.45;font-weight:700;color:#0f766e;min-height:38px;padding:0 4px 10px"></div>
-<div class="row"><label><input type="checkbox" id="showtr" checked onchange="showTr()"> הצג תרגום לעברית</label></div>
+<div class="row"><label><input type="checkbox" id="showtr" checked onchange="showTr()"> הצג תרגום</label></div>
 <div id="heard"></div>
 <div class="row">
 <button class="btn big sec" onclick="cmd('prev')">⏮️ הקודם</button>
@@ -75,7 +80,7 @@ let lastCmd=0,S=[],i=0,rate=0.95,paused=false,speaking=false,rec=null,recOn=fals
 const CMD={en:{next:["next","nex","necks","text"],again:["again","repeat","agin","a gain"],slow:["slowly","slow","slower"],normal:["normal","regular"],faster:["faster","fast","quicker"],prev:["back","previous","before"],stop:["stop","pause"],go:["continue","go","resume","start"]},
  he:{next:["הבא","הבאה","קדימה","נקסט"],again:["חזור","שוב","עוד פעם","אגיין"],slow:["לאט","יותר לאט","לאט יותר","סלואו"],normal:["רגיל"],faster:["מהר","מהר יותר","יותר מהר"],prev:["הקודם","אחורה","הקודמת"],stop:["עצור","הפסק","סטופ"],go:["המשך","תמשיך"]}};
 function clean(t){return t.replace(/\r/g,"").split("\n").filter(l=>{l=l.trim();return l&&!/^\d{1,2}:\d{2}(:\d{2})?$/.test(l)&&!/(שניות|שניה|דקות|דקה|seconds?|minutes?)\s*$/i.test(l)&&!/^\[[^\]]*\]$/.test(l)&&!/^[A-Za-z]\]?$|^c\]$/.test(l)}).map(l=>l.replace(/\[(Music|Applause|Laughter)\]/gi,"").trim()).join("\n")}
-function split(t){t=clean(t).trim();let parts=$("lines").checked?t.split(/\n+/):t.replace(/\n+/g," ").split(/(?<=[.!?;])\s+(?=["'“(A-Z0-9])/);
+function split(t){t=clean(t).trim();let parts=$("lines").checked?t.split(/\n+/):t.replace(/\n+/g," ").split(/(?<=[.!?;])\s+(?=\S)/);
  return parts.map(s=>s.trim()).filter(s=>s.length>1)}
 async function loadUrl(){const u=$("url").value.trim();if(!u)return;const m=$("urlmsg");m.innerHTML="<small>טוען...</small>";
  try{const r=await fetch("https://r.jina.ai/"+u,{headers:{Accept:"text/plain"}});if(!r.ok)throw 0;let t=await r.text();
@@ -83,32 +88,40 @@ async function loadUrl(){const u=$("url").value.trim();if(!u)return;const m=$("u
   $("txt").value=t.trim();$("lines").checked=false;m.innerHTML="<small>✅ נטען. כדאי לעבור על הטקסט ולמחוק חלקים לא רלוונטיים (תפריטים, פרסומות).</small>"}
  catch(e){m.innerHTML="<small>⚠️ לא הצלחתי לטעון מהאתר הזה. פתח את המאמר, העתק את הטקסט והדבק אותו בתיבה.</small>"}}
 let user=localStorage.getItem("user")||"",cur=null;
+const LANGS=[["en","אנגלית","en-US"],["he","עברית","he-IL"],["de","גרמנית","de-DE"],["fr","צרפתית","fr-FR"],["nl","הולנדית","nl-NL"],["sr","סרבית","sr-RS"]];
+const LN=c=>LANGS.find(l=>l[0]==c)||LANGS[0];let src="en",dst="he";
+function loadLangs(){const v=JSON.parse(localStorage.getItem("lang:"+user.toLowerCase())||"null");if(v){src=v[0];dst=v[1]}return!!v}
+function showLangs(){const o=LANGS.map(l=>`<option value="${l[0]}">${l[1]}</option>`).join("");$("lsrc").innerHTML=o;$("ldst").innerHTML=o;$("lsrc").value=src;$("ldst").value=dst;
+ ["userbar","plbox","setup","play"].forEach(id=>$(id).classList.add("hide"));$("langs").classList.remove("hide")}
+function saveLangs(){const a=$("lsrc").value,b=$("ldst").value;if(a==b)return alert("בחר שתי שפות שונות");src=a;dst=b;localStorage.setItem("lang:"+user.toLowerCase(),JSON.stringify([a,b]));$("langs").classList.add("hide");home()}
+function applyLangs(){$("srcname").textContent=LN(src)[1];$("lpair").textContent="🌍 "+LN(src)[1]+" ← "+LN(dst)[1];
+ $("sent").style.direction=src=="he"?"rtl":"ltr";$("tr").style.direction=dst=="he"?"rtl":"ltr";const t=$("txt");t.style.direction=src=="he"?"rtl":"ltr"}
 const PK=()=>"pl:"+user.toLowerCase();const getPL=()=>JSON.parse(localStorage.getItem(PK())||"[]");const putPL=p=>localStorage.setItem(PK(),JSON.stringify(p));
 function login(){const n=$("lname").value.trim(),p=$("lpass").value;if(!n)return alert("כתוב שם");if(p!=="12345")return alert("סיסמה שגויה");user=n;localStorage.setItem("user",n);home()}
 function logout(){back(true);user="";localStorage.removeItem("user");home()}
-function home(){const in_=!!user;$("login").classList.toggle("hide",in_);["userbar","plbox","setup"].forEach(id=>$(id).classList.toggle("hide",!in_));$("play").classList.add("hide");
+function home(){const in_=!!user;$("langs").classList.add("hide");if(in_&&!loadLangs())return($("login").classList.add("hide"),showLangs());if(in_)applyLangs();$("login").classList.toggle("hide",in_);["userbar","plbox","setup"].forEach(id=>$(id).classList.toggle("hide",!in_));$("play").classList.add("hide");
  if(!in_){$("lname").value="";$("lpass").value="";return}$("uname").textContent="שלום, "+user+" 👋";drawPL()}
 function drawPL(){const p=getPL();$("pl").innerHTML=p.length?p.map(x=>`<div class="row" style="border-bottom:1px solid var(--line);padding:6px 0;margin:0"><span style="flex:1;direction:ltr;text-align:left">${x.title.replace(/</g,"&lt;")}<br><small>משפט ${Math.min((x.pos||0)+1,x.n)} מתוך ${x.n}</small></span><button class="btn" style="padding:8px 14px" onclick="openPL('${x.id}')">▶️</button><button class="btn sec" style="padding:8px 12px;border-color:#b91c1c;color:#b91c1c" onclick="delPL('${x.id}')">🗑️ מחק</button></div>`).join(""):"<p><small>עדיין אין טקסטים. הדבק טקסט למטה ולחץ התחל, והוא יישמר כאן.</small></p>"}
-function openPL(id){const x=getPL().find(y=>y.id==id);if(!x)return;$("txt").value=x.text;$("lines").checked=x.lines;cur=id;start(x.pos||0)}
+function openPL(id){const x=getPL().find(y=>y.id==id);if(!x)return;$("txt").value=x.text;$("lines").checked=x.lines;if(x.src){src=x.src;dst=x.dst;applyLangs()}cur=id;start(x.pos||0)}
 function delPL(id){const x=getPL().find(y=>y.id==id);if(!x||!confirm("למחוק את \""+x.title+"\"?"))return;putPL(getPL().filter(y=>y.id!=id));drawPL()}
 function savePos(){if(!cur)return;const p=getPL(),x=p.find(y=>y.id==cur);if(x){x.pos=i;putPL(p)}}
 function start(at){S=split($("txt").value);if(!S.length)return alert("הדבק טקסט קודם");lang=document.querySelector("input[name=cl]:checked").value;
  const text=$("txt").value.trim();let p=getPL(),x=p.find(y=>y.text==text);
- if(!x){x={id:Date.now().toString(36),title:S[0].slice(0,60),text,lines:$("lines").checked,n:S.length,pos:0};p.unshift(x);putPL(p)}
+ if(!x){x={id:Date.now().toString(36),title:S[0].slice(0,60),text,src,dst,lines:$("lines").checked,n:S.length,pos:0};p.unshift(x);putPL(p)}
  cur=x.id;i=typeof at=="number"?at:(x.pos||0);if(i>=S.length)i=0;$("plbox").classList.add("hide");
  $("setup").classList.add("hide");$("play").classList.remove("hide");
  $("help").textContent=lang=="en"?"אמור: next (הבא) · again (שוב) · slowly (לאט) · faster (מהר) · normal (רגיל) · back (הקודם) · stop (עצור) · continue (המשך)":"אמור: הבא · חזור · לאט · מהר · רגיל · הקודם · עצור · המשך";
  initRec();setSp(sp);say()}
 function back(q){speechSynthesis.cancel();stopRec();$("play").classList.add("hide");if(!q){$("setup").classList.remove("hide");$("plbox").classList.remove("hide");$("txt").value="";cur=null;drawPL()}}
-function voice(){const v=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));return v.find(v=>/Google US|Samantha|Aria|Jenny/i.test(v.name))||v.find(v=>/en-US/i.test(v.lang))||v[0]}
+function voice(){const L=LN(src)[2],v=speechSynthesis.getVoices().filter(v=>v.lang.replace("_","-").toLowerCase().startsWith(src)||(src=="he"&&/^iw/i.test(v.lang)));return v.find(v=>/Google/i.test(v.name)&&v.lang.replace("_","-")==L)||v.find(v=>v.lang.replace("_","-")==L)||v[0];return v.find(v=>/en-US/i.test(v.lang))||v[0]}
 const TC=JSON.parse(localStorage.getItem("trc")||"{}");
-async function tr(s){if(TC[s])return TC[s];let t="";
- try{const r=await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=he&dt=t&q="+encodeURIComponent(s));const j=await r.json();t=j[0].map(x=>x[0]).join("")}catch(e){}
- if(!t)try{const r=await fetch("https://api.mymemory.translated.net/get?langpair=en|he&q="+encodeURIComponent(s));const j=await r.json();t=j.responseData.translatedText}catch(e){}
- if(t){TC[s]=t;try{localStorage.setItem("trc",JSON.stringify(TC))}catch(e){}}return t}
+async function tr(s){const K=src+">"+dst+":"+s;if(TC[K])return TC[K];let t="";
+ try{const r=await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl="+src+"&tl="+dst+"&dt=t&q="+encodeURIComponent(s));const j=await r.json();t=j[0].map(x=>x[0]).join("")}catch(e){}
+ if(!t)try{const r=await fetch("https://api.mymemory.translated.net/get?langpair="+src+"|"+dst+"&q="+encodeURIComponent(s));const j=await r.json();t=j.responseData.translatedText}catch(e){}
+ if(t){TC[K]=t;try{localStorage.setItem("trc",JSON.stringify(TC))}catch(e){}}return t}
 async function showTr(){const el=$("tr");if(!$("showtr").checked){el.textContent="";return}const s=S[i];el.textContent="…";const t=await tr(s);if(S[i]==s)el.textContent=t||"(התרגום לא זמין כרגע)";if(S[i+1])tr(S[i+1])}
 function say(){speechSynthesis.cancel();paused=false;const s=S[i];$("sent").textContent=s;showTr();$("prog").textContent=`משפט ${i+1} מתוך ${S.length}`;$("rt").textContent=sp+" מתוך 10"+(sp==10?" (רגיל)":sp<=3?" 🐢":"");
- savePos();const u=new SpeechSynthesisUtterance(s);u.lang="en-US";u.rate=rate;const v=voice();if(v)u.voice=v;
+ savePos();const u=new SpeechSynthesisUtterance(s);u.lang=LN(src)[2];u.rate=rate;const v=voice();if(v)u.voice=v;
  speaking=true;stopRec();u.onend=u.onerror=()=>{speaking=false;setTimeout(startRec,250)};speechSynthesis.speak(u)}
 function cmd(c){if(c=="next"){if(i<S.length-1){i++;say()}else{$("sent").textContent="🎉 סיימת את כל הטקסט! Well done!";speakDone()}}
  else if(c=="again")say();else if(c=="prev"){if(i>0)i--;say()}
