@@ -143,7 +143,7 @@ function match(t){t=t.toLowerCase().replace(/[.,!?״"'’]/g,"").replace(/\s+/g,
  return null}
 function initRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R){$("mic").textContent="🎤 זיהוי קולי לא נתמך, השתמש בכפתורים";return}
  if(rec)return;rec=new R();rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=3;
- rec.onresult=e=>{for(let k=e.resultIndex;k<e.results.length;k++){const res=e.results[k];if(speaking)continue;if(accDone||(acc&&Date.now()-lastFin>4000)){acc="";accDone=false}if(!res.isFinal){lastInt=res[0].transcript;$("heard").textContent="🎧 שמעתי: "+(acc?acc+" ":"")+lastInt}else{const cands=[...Array(res.length)].map((_,a)=>res[a].transcript);if(lastInt)cands.push(lastInt);lastInt="";let best=cands[0];for(const c of cands)if(simil(acc+" "+c)>simil(acc+" "+best))best=c;if(match(best.trim())&&best.trim().split(/\s+/).length<=2){}else{acc=(acc+" "+best).trim();lastFin=Date.now();const T=(S[i]||"").split(/\s+/).map(w=>NW(w).join("")).filter(Boolean),H=acc.split(/\s+/).map(w=>NW(w).join("")).filter(Boolean);if(H.length>=T.length||(T.length&&H[H.length-1]==T[T.length-1]))accDone=true}$("heard").textContent="🎧 שמעתי: "+acc;if(acc)grade(acc)}
+ rec.onresult=e=>{for(let k=e.resultIndex;k<e.results.length;k++){const res=e.results[k];if(speaking)continue;$("heard").textContent="🎧 שמעתי: "+res[0].transcript;
   let c=null;for(let a=0;a<res.length&&!c;a++)c=match(res[a].transcript);
   if(c&&!speaking&&Date.now()>quietUntil&&Date.now()-lastCmd>1500){lastCmd=Date.now();try{rec.abort()}catch(_){}cmd(c);return}}};
  rec.onend=()=>{recOn=false;$("mic").classList.remove("on");if(!speaking&&!$("play").classList.contains("hide"))setTimeout(startRec,300)};
@@ -151,7 +151,7 @@ function initRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognit
 const NW=t=>t.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f\u0591-\u05c7]/g,"").replace(/[’']/g,"").replace(/[^\p{L}\p{N}\s]/gu," ").split(/\s+/).filter(Boolean);
 function simil(h){const T=(S[i]||"").split(/\s+/).map(w=>NW(w).join("")).filter(Boolean),H=h.split(/\s+/).map(w=>NW(w).join("")).filter(Boolean);
  const n=T.length,m=H.length;if(!n||!m)return 0;let P=Array(m+1).fill(0);for(let a=0;a<n;a++){const C=Array(m+1).fill(0);for(let b=0;b<m;b++)C[b+1]=T[a]==H[b]?P[b]+1:Math.max(P[b+1],C[b]);P=C}return P[m]/n-Math.max(0,m-n)*0.01}
-function grade(heard){if(rec&&rec.lang!==LN(src)[2])return;const T=S[i].split(/\s+/).map(w=>NW(w).join("")).filter(Boolean),hw=heard.split(/\s+/).filter(Boolean),H=hw.map(w=>NW(w).join(""));
+function grade(heard){return;if(rec&&rec.lang!==LN(src)[2])return;const T=S[i].split(/\s+/).map(w=>NW(w).join("")).filter(Boolean),hw=heard.split(/\s+/).filter(Boolean),H=hw.map(w=>NW(w).join(""));
  const allC=Object.values(CMD[lang]).flat();while(H.length&&(allC.includes(H[H.length-1])||!H[H.length-1])){H.pop();hw.pop()}if(H.length<Math.min(2,T.length))return;
  const n=T.length,m=H.length,D=[...Array(n+1)].map(()=>Array(m+1).fill(0));
  for(let a=n-1;a>=0;a--)for(let b=m-1;b>=0;b--)D[a][b]=T[a]&&T[a]==H[b]?D[a+1][b+1]+1:Math.max(D[a+1][b],D[a][b+1]);
@@ -162,5 +162,5 @@ function grade(heard){if(rec&&rec.lang!==LN(src)[2])return;const T=S[i].split(/\
 function startRec(){if(!rec||recOn||speaking)return;rec.lang=(lang=="he"&&src!="he")?"he-IL":(lang=="en"&&src!="en"&&false)?"en-US":LN(src)[2];try{rec.start();recOn=true;$("mic").classList.add("on");if(!paused)$("mic").textContent="🎤 מקשיב..."}catch(e){}}
 function stopRec(){if(rec&&recOn){try{rec.abort()}catch(e){}recOn=false;$("mic").classList.remove("on");$("mic").textContent="🔊 מקריא..."}}
 speechSynthesis.onvoiceschanged=()=>{};home();if(user){loadLangs();$("login").classList.add("hide");showLangs()}
-const APPV="20";fetch(location.pathname+"?nc="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APPV="(\d+)"/);if(m&&m[1]!==APPV&&!sessionStorage.getItem("rl"+m[1])){sessionStorage.setItem("rl"+m[1],1);location.replace(location.pathname+"?v="+m[1])}}).catch(()=>{});
+const APPV="21";fetch(location.pathname+"?nc="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APPV="(\d+)"/);if(m&&m[1]!==APPV&&!sessionStorage.getItem("rl"+m[1])){sessionStorage.setItem("rl"+m[1],1);location.replace(location.pathname+"?v="+m[1])}}).catch(()=>{});
 </script></body></html>
