@@ -95,7 +95,7 @@ function loadLangs(){const v=JSON.parse(localStorage.getItem("lang:"+user.toLowe
 function showLangs(){const o=LANGS.map(l=>`<option value="${l[0]}">${l[1]} / ${l[3]}</option>`).join("");$("lsrc").innerHTML=o;$("ldst").innerHTML=o;$("lsrc").value=src;$("ldst").value=dst;
  ["userbar","plbox","setup","play"].forEach(id=>$(id).classList.add("hide"));$("langs").classList.remove("hide")}
 function saveLangs(){const a=$("lsrc").value,b=$("ldst").value;if(a==b)return alert("בחר שתי שפות שונות");src=a;dst=b;localStorage.setItem("lang:"+user.toLowerCase(),JSON.stringify([a,b]));$("langs").classList.add("hide");home()}
-function applyLangs(){$("srcname").textContent=LN(src)[1];$("lpair").textContent="🌍 "+LN(src)[1]+" ← "+LN(dst)[1];
+function applyLangs(){$("srcname").textContent=LN(src)[1];$("lpair").innerHTML="🌍 "+LN(src)[1]+" ← "+LN(dst)[1]+"<br><small style=\"font-weight:400\">לחזרה לבחירת שפות</small>";
  $("sent").style.direction=src=="he"?"rtl":"ltr";$("tr").style.direction=dst=="he"?"rtl":"ltr";const t=$("txt");t.style.direction=src=="he"?"rtl":"ltr"}
 const PK=()=>"pl:"+user.toLowerCase();const getPL=()=>JSON.parse(localStorage.getItem(PK())||"[]");const putPL=p=>localStorage.setItem(PK(),JSON.stringify(p));
 function login(){const n=$("lname").value.trim(),p=$("lpass").value;if(!n)return alert("כתוב שם");if(p!=="12345")return alert("סיסמה שגויה");user=n;localStorage.setItem("user",n);home()}
@@ -142,5 +142,5 @@ function initRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognit
 function startRec(){if(!rec||recOn||speaking)return;rec.lang=lang=="he"?"he-IL":"en-US";try{rec.start();recOn=true;$("mic").classList.add("on");if(!paused)$("mic").textContent="🎤 מקשיב..."}catch(e){}}
 function stopRec(){if(rec&&recOn){try{rec.abort()}catch(e){}recOn=false;$("mic").classList.remove("on");$("mic").textContent="🔊 מקריא..."}}
 speechSynthesis.onvoiceschanged=()=>{};home();if(user){loadLangs();$("login").classList.add("hide");showLangs()}
-const APPV="12";fetch(location.pathname+"?nc="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APPV="(\d+)"/);if(m&&m[1]!==APPV&&!sessionStorage.getItem("rl"+m[1])){sessionStorage.setItem("rl"+m[1],1);location.replace(location.pathname+"?v="+m[1])}}).catch(()=>{});
+const APPV="13";fetch(location.pathname+"?nc="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APPV="(\d+)"/);if(m&&m[1]!==APPV&&!sessionStorage.getItem("rl"+m[1])){sessionStorage.setItem("rl"+m[1],1);location.replace(location.pathname+"?v="+m[1])}}).catch(()=>{});
 </script></body></html>
