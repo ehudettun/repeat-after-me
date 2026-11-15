@@ -1,0 +1,97 @@
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache">
+<title>חזור אחריי | Repeat After Me</title>
+<style>
+:root{--ink:#1d2433;--acc:#0f766e;--bg:#f4f7f6;--line:#dfe7e5}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 Arial,sans-serif}
+header{background:var(--acc);color:#fff;padding:18px;text-align:center}h1{margin:0;font-size:25px}header p{margin:4px 0 0;opacity:.85}
+main{max-width:820px;margin:auto;padding:16px}
+.box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+textarea,input[type=url]{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:16px;direction:ltr;text-align:left}
+textarea{min-height:160px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.btn{border:0;border-radius:10px;padding:12px 18px;font-size:17px;font-weight:700;cursor:pointer;background:var(--acc);color:#fff}
+.btn.sec{background:#fff;color:var(--acc);border:2px solid var(--acc)}
+.big{flex:1 1 30%;font-size:19px;padding:16px 8px}
+#sent{direction:ltr;text-align:left;font-size:26px;line-height:1.45;font-weight:700;min-height:120px;padding:10px 4px}
+#prog{color:#667;font-size:15px}
+#mic{font-size:15px;padding:6px 10px;border-radius:20px;background:#eee;display:inline-block}
+#mic.on{background:#dcfce7;color:#166534}
+#heard{color:#667;font-size:14px;direction:ltr;text-align:left;min-height:20px}
+.hide{display:none}
+small{color:#667}
+</style></head><body>
+<header><h1>🗣️ חזור אחריי</h1><p>האפליקציה מקריאה משפט, אתה חוזר, ואומר next / again / slowly</p></header>
+<main>
+<div id="setup" class="box">
+<b>1. הדבק טקסט באנגלית</b> <small>(מאמר, שיר, כל דבר)</small>
+<textarea id="txt" placeholder="Paste your English text here..."></textarea>
+<div class="row"><b>או קישור למאמר:</b></div>
+<div class="row"><input type="url" id="url" placeholder="https://..."><button class="btn sec" onclick="loadUrl()">טען מהקישור</button></div>
+<div id="urlmsg"><small></small></div>
+<div class="row"><label><input type="checkbox" id="lines" checked> שיר: כל שורה היא משפט</label></div>
+<div class="row"><b>שפת הפקודות הקוליות:</b>
+<label><input type="radio" name="cl" value="en" checked> English (next / again / slowly)</label>
+<label><input type="radio" name="cl" value="he"> עברית (הבא / חזור / לאט)</label></div>
+<div class="row"><button class="btn" onclick="start()">▶️ התחל</button></div>
+</div>
+
+<div id="play" class="box hide">
+<div class="row" style="justify-content:space-between"><span id="prog"></span><span id="mic">🎤 כבוי</span></div>
+<div id="sent"></div>
+<div id="heard"></div>
+<div class="row">
+<button class="btn big sec" onclick="cmd('prev')">⏮️ הקודם</button>
+<button class="btn big sec" onclick="cmd('again')">🔁 שוב</button>
+<button class="btn big" onclick="cmd('next')">⏭️ הבא</button>
+</div>
+<div class="row">
+<button class="btn big sec" onclick="cmd('slow')">🐢 לאט</button>
+<button class="btn big sec" onclick="cmd('normal')">🚶 רגיל</button>
+<button class="btn big sec" onclick="cmd('stop')">⏸️ עצור/המשך</button>
+</div>
+<div class="row"><small>מהירות: <span id="rt"></span></small> <button class="btn sec" style="margin-inline-start:auto" onclick="back()">✏️ טקסט חדש</button></div>
+<p><small id="help"></small></p>
+</div>
+<p><small>הזיהוי הקולי עובד בדפדפן Chrome (אנדרואיד ומחשב). בפעם הראשונה הדפדפן יבקש רשות להשתמש במיקרופון. מומלץ להשתמש באוזניות, כדי שהמיקרופון לא ישמע את ההקראה.</small></p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let S=[],i=0,rate=0.95,paused=false,speaking=false,rec=null,recOn=false,lang="en";
+const CMD={en:{next:["next","nex","necks","text"],again:["again","repeat","agin","a gain"],slow:["slowly","slow","slower"],normal:["normal","faster","fast"],prev:["back","previous","before"],stop:["stop","pause"],go:["continue","go","resume","start"]},
+ he:{next:["הבא","הבאה","קדימה","נקסט"],again:["חזור","שוב","עוד פעם","אגיין"],slow:["לאט","יותר לאט","לאט יותר","סלואו"],normal:["רגיל","מהר","מהר יותר"],prev:["הקודם","אחורה","הקודמת"],stop:["עצור","הפסק","סטופ"],go:["המשך","תמשיך"]}};
+function split(t){t=t.replace(/\r/g,"").trim();let parts=$("lines").checked?t.split(/\n+/):t.replace(/\n+/g," ").split(/(?<=[.!?;])\s+(?=["'“(A-Z0-9])/);
+ return parts.map(s=>s.trim()).filter(s=>s.length>1)}
+async function loadUrl(){const u=$("url").value.trim();if(!u)return;const m=$("urlmsg");m.innerHTML="<small>טוען...</small>";
+ try{const r=await fetch("https://r.jina.ai/"+u,{headers:{Accept:"text/plain"}});if(!r.ok)throw 0;let t=await r.text();
+  t=t.replace(/^[\s\S]*?Markdown Content:\s*/,"").replace(/!\[[^\]]*\]\([^)]*\)/g,"").replace(/\[([^\]]*)\]\([^)]*\)/g,"$1").replace(/^[#>*\-\s]+/gm,"").replace(/\n{2,}/g,"\n\n");
+  $("txt").value=t.trim();$("lines").checked=false;m.innerHTML="<small>✅ נטען. כדאי לעבור על הטקסט ולמחוק חלקים לא רלוונטיים (תפריטים, פרסומות).</small>"}
+ catch(e){m.innerHTML="<small>⚠️ לא הצלחתי לטעון מהאתר הזה. פתח את המאמר, העתק את הטקסט והדבק אותו בתיבה.</small>"}}
+function start(){S=split($("txt").value);if(!S.length)return alert("הדבק טקסט קודם");lang=document.querySelector("input[name=cl]:checked").value;
+ i=+(localStorage.getItem("pos:"+S[0])||0);if(i>=S.length)i=0;
+ $("setup").classList.add("hide");$("play").classList.remove("hide");
+ $("help").textContent=lang=="en"?"אמור: next (הבא) · again (שוב) · slowly (לאט) · normal (רגיל) · back (הקודם) · stop (עצור) · continue (המשך)":"אמור: הבא · חזור · לאט · רגיל · הקודם · עצור · המשך";
+ initRec();say()}
+function back(){speechSynthesis.cancel();stopRec();$("play").classList.add("hide");$("setup").classList.remove("hide")}
+function voice(){const v=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));return v.find(v=>/Google US|Samantha|Aria|Jenny/i.test(v.name))||v.find(v=>/en-US/i.test(v.lang))||v[0]}
+function say(){speechSynthesis.cancel();paused=false;const s=S[i];$("sent").textContent=s;$("prog").textContent=`משפט ${i+1} מתוך ${S.length}`;$("rt").textContent=rate<0.8?"איטית 🐢":"רגילה";
+ localStorage.setItem("pos:"+S[0],i);const u=new SpeechSynthesisUtterance(s);u.lang="en-US";u.rate=rate;const v=voice();if(v)u.voice=v;
+ speaking=true;stopRec();u.onend=u.onerror=()=>{speaking=false;setTimeout(startRec,250)};speechSynthesis.speak(u)}
+function cmd(c){if(c=="next"){if(i<S.length-1){i++;say()}else{$("sent").textContent="🎉 סיימת את כל הטקסט! Well done!";speakDone()}}
+ else if(c=="again")say();else if(c=="prev"){if(i>0)i--;say()}
+ else if(c=="slow"){rate=0.65;say()}else if(c=="normal"){rate=0.95;say()}
+ else if(c=="stop"){if(paused){paused=false;say()}else{paused=true;speechSynthesis.cancel();$("mic").textContent="⏸️ מושהה – אמור continue / המשך"}}
+ else if(c=="go"){if(paused)say()}}
+function speakDone(){const u=new SpeechSynthesisUtterance("Well done!");u.lang="en-US";speechSynthesis.speak(u)}
+function match(t){t=t.toLowerCase().replace(/[.,!?]/g,"").trim();const w=t.split(/\s+/);if(w.length>4)return null;
+ for(const [c,list] of Object.entries(CMD[lang]))for(const k of list)if(t==k||t.endsWith(" "+k)||t.startsWith(k+" ")||(lang=="he"&&t.includes(k)))return c;return null}
+function initRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R){$("mic").textContent="🎤 זיהוי קולי לא נתמך, השתמש בכפתורים";return}
+ if(rec)return;rec=new R();rec.continuous=true;rec.interimResults=false;
+ rec.onresult=e=>{for(let k=e.resultIndex;k<e.results.length;k++){if(!e.results[k].isFinal)continue;const t=e.results[k][0].transcript;$("heard").textContent="🎧 "+t;
+  const c=match(t);if(c&&(!paused||c=="go"||c=="stop"||c=="next"||c=="again"))cmd(c)}};
+ rec.onend=()=>{recOn=false;$("mic").classList.remove("on");if(!speaking&&!$("play").classList.contains("hide"))setTimeout(startRec,300)};
+ rec.onerror=e=>{if(e.error=="not-allowed")$("mic").textContent="🎤 אין הרשאת מיקרופון"}}
+function startRec(){if(!rec||recOn||speaking)return;rec.lang=lang=="he"?"he-IL":"en-US";try{rec.start();recOn=true;$("mic").classList.add("on");if(!paused)$("mic").textContent="🎤 מקשיב..."}catch(e){}}
+function stopRec(){if(rec&&recOn){try{rec.abort()}catch(e){}recOn=false;$("mic").classList.remove("on");$("mic").textContent="🔊 מקריא..."}}
+speechSynthesis.onvoiceschanged=()=>{};
+</script></body></html>
