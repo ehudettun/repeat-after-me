@@ -31,10 +31,10 @@ small{color:#667}
 <p><small>משתמש חדש? פשוט כותבים שם וסיסמה, והחשבון נוצר אוטומטית.</small></p></div>
 <div id="userbar" class="row hide" style="justify-content:space-between;margin-bottom:10px"><b id="uname"></b><span><button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="showLangs()" id="lpair">🌍</button> <button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="logout()">יציאה</button></span></div>
 <div id="langs" class="box hide" style="max-width:520px;margin:20px auto;text-align:center">
-<h2 style="margin-top:0">🌍 בחר שפות</h2>
-<div style="text-align:right"><b>אני רוצה לתרגל (שפת הטקסט):</b><select id="lsrc" style="width:100%;padding:12px;font-size:18px;margin:6px 0 14px;border-radius:8px"></select>
-<b>התרגום יופיע ב:</b><select id="ldst" style="width:100%;padding:12px;font-size:18px;margin:6px 0 14px;border-radius:8px"></select></div>
-<button class="btn" style="width:100%" onclick="saveLangs()">המשך ←</button></div>
+<h2 style="margin-top:0">🌍 בחר שפות<br><small style="font-weight:400">Choose languages</small></h2>
+<div style="text-align:right"><b>אני רוצה לתרגל (שפת הטקסט)<br><span dir="ltr">I want to practice (text language)</span></b><select id="lsrc" style="width:100%;padding:12px;font-size:18px;margin:6px 0 14px;border-radius:8px"></select>
+<b>התרגום יופיע ב<br><span dir="ltr">Translate to</span></b><select id="ldst" style="width:100%;padding:12px;font-size:18px;margin:6px 0 14px;border-radius:8px"></select></div>
+<button class="btn" style="width:100%" onclick="saveLangs()">המשך ← Continue</button></div>
 <div id="plbox" class="box hide"><b>📚 רשימת ההשמעה שלי</b><div id="pl"></div></div>
 <div id="setup" class="box hide">
 <b>1. הדבק טקסט ב<span id="srcname">אנגלית</span></b> <small>(מאמר, שיר, כל דבר)</small>
@@ -88,10 +88,10 @@ async function loadUrl(){const u=$("url").value.trim();if(!u)return;const m=$("u
   $("txt").value=t.trim();$("lines").checked=false;m.innerHTML="<small>✅ נטען. כדאי לעבור על הטקסט ולמחוק חלקים לא רלוונטיים (תפריטים, פרסומות).</small>"}
  catch(e){m.innerHTML="<small>⚠️ לא הצלחתי לטעון מהאתר הזה. פתח את המאמר, העתק את הטקסט והדבק אותו בתיבה.</small>"}}
 let user=localStorage.getItem("user")||"",cur=null;
-const LANGS=[["en","אנגלית","en-US"],["he","עברית","he-IL"],["de","גרמנית","de-DE"],["fr","צרפתית","fr-FR"],["nl","הולנדית","nl-NL"],["sr","סרבית","sr-RS"]];
+const LANGS=[["en","אנגלית","en-US","English"],["he","עברית","he-IL","Hebrew"],["de","גרמנית","de-DE","German"],["fr","צרפתית","fr-FR","French"],["nl","הולנדית","nl-NL","Dutch"],["sr","סרבית","sr-RS","Serbian"]];
 const LN=c=>LANGS.find(l=>l[0]==c)||LANGS[0];let src="en",dst="he";
 function loadLangs(){const v=JSON.parse(localStorage.getItem("lang:"+user.toLowerCase())||"null");if(v){src=v[0];dst=v[1]}return!!v}
-function showLangs(){const o=LANGS.map(l=>`<option value="${l[0]}">${l[1]}</option>`).join("");$("lsrc").innerHTML=o;$("ldst").innerHTML=o;$("lsrc").value=src;$("ldst").value=dst;
+function showLangs(){const o=LANGS.map(l=>`<option value="${l[0]}">${l[1]} / ${l[3]}</option>`).join("");$("lsrc").innerHTML=o;$("ldst").innerHTML=o;$("lsrc").value=src;$("ldst").value=dst;
  ["userbar","plbox","setup","play"].forEach(id=>$(id).classList.add("hide"));$("langs").classList.remove("hide")}
 function saveLangs(){const a=$("lsrc").value,b=$("ldst").value;if(a==b)return alert("בחר שתי שפות שונות");src=a;dst=b;localStorage.setItem("lang:"+user.toLowerCase(),JSON.stringify([a,b]));$("langs").classList.add("hide");home()}
 function applyLangs(){$("srcname").textContent=LN(src)[1];$("lpair").textContent="🌍 "+LN(src)[1]+" ← "+LN(dst)[1];
