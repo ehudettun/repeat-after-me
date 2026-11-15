@@ -60,7 +60,8 @@ const $=id=>document.getElementById(id);
 let S=[],i=0,rate=0.95,paused=false,speaking=false,rec=null,recOn=false,lang="en";
 const CMD={en:{next:["next","nex","necks","text"],again:["again","repeat","agin","a gain"],slow:["slowly","slow","slower"],normal:["normal","faster","fast"],prev:["back","previous","before"],stop:["stop","pause"],go:["continue","go","resume","start"]},
  he:{next:["הבא","הבאה","קדימה","נקסט"],again:["חזור","שוב","עוד פעם","אגיין"],slow:["לאט","יותר לאט","לאט יותר","סלואו"],normal:["רגיל","מהר","מהר יותר"],prev:["הקודם","אחורה","הקודמת"],stop:["עצור","הפסק","סטופ"],go:["המשך","תמשיך"]}};
-function split(t){t=t.replace(/\r/g,"").trim();let parts=$("lines").checked?t.split(/\n+/):t.replace(/\n+/g," ").split(/(?<=[.!?;])\s+(?=["'“(A-Z0-9])/);
+function clean(t){return t.replace(/\r/g,"").split("\n").filter(l=>{l=l.trim();return l&&!/^\d{1,2}:\d{2}(:\d{2})?$/.test(l)&&!/(שניות|שניה|דקות|דקה|seconds?|minutes?)\s*$/i.test(l)&&!/^\[[^\]]*\]$/.test(l)&&!/^[A-Za-z]\]?$|^c\]$/.test(l)}).map(l=>l.replace(/\[(Music|Applause|Laughter)\]/gi,"").trim()).join("\n")}
+function split(t){t=clean(t).trim();let parts=$("lines").checked?t.split(/\n+/):t.replace(/\n+/g," ").split(/(?<=[.!?;])\s+(?=["'“(A-Z0-9])/);
  return parts.map(s=>s.trim()).filter(s=>s.length>1)}
 async function loadUrl(){const u=$("url").value.trim();if(!u)return;const m=$("urlmsg");m.innerHTML="<small>טוען...</small>";
  try{const r=await fetch("https://r.jina.ai/"+u,{headers:{Accept:"text/plain"}});if(!r.ok)throw 0;let t=await r.text();
