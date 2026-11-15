@@ -39,6 +39,8 @@ small{color:#667}
 <div id="play" class="box hide">
 <div class="row" style="justify-content:space-between"><span id="prog"></span><span id="mic">🎤 כבוי</span></div>
 <div id="sent"></div>
+<div id="tr" style="direction:rtl;text-align:right;font-size:20px;color:#0f766e;min-height:28px;padding:0 4px 8px"></div>
+<div class="row"><label><input type="checkbox" id="showtr" checked onchange="showTr()"> הצג תרגום לעברית</label></div>
 <div id="heard"></div>
 <div class="row">
 <button class="btn big sec" onclick="cmd('prev')">⏮️ הקודם</button>
@@ -79,7 +81,13 @@ function start(){S=split($("txt").value);if(!S.length)return alert("הדבק ט�
  initRec();setSp(sp);say()}
 function back(){speechSynthesis.cancel();stopRec();$("play").classList.add("hide");$("setup").classList.remove("hide")}
 function voice(){const v=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));return v.find(v=>/Google US|Samantha|Aria|Jenny/i.test(v.name))||v.find(v=>/en-US/i.test(v.lang))||v[0]}
-function say(){speechSynthesis.cancel();paused=false;const s=S[i];$("sent").textContent=s;$("prog").textContent=`משפט ${i+1} מתוך ${S.length}`;$("rt").textContent=sp+" מתוך 10"+(sp==10?" (רגיל)":sp<=3?" 🐢":"");
+const TC=JSON.parse(localStorage.getItem("trc")||"{}");
+async function tr(s){if(TC[s])return TC[s];let t="";
+ try{const r=await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=he&dt=t&q="+encodeURIComponent(s));const j=await r.json();t=j[0].map(x=>x[0]).join("")}catch(e){}
+ if(!t)try{const r=await fetch("https://api.mymemory.translated.net/get?langpair=en|he&q="+encodeURIComponent(s));const j=await r.json();t=j.responseData.translatedText}catch(e){}
+ if(t){TC[s]=t;try{localStorage.setItem("trc",JSON.stringify(TC))}catch(e){}}return t}
+async function showTr(){const el=$("tr");if(!$("showtr").checked){el.textContent="";return}const s=S[i];el.textContent="…";const t=await tr(s);if(S[i]==s)el.textContent=t||"(התרגום לא זמין כרגע)";if(S[i+1])tr(S[i+1])}
+function say(){speechSynthesis.cancel();paused=false;const s=S[i];$("sent").textContent=s;showTr();$("prog").textContent=`משפט ${i+1} מתוך ${S.length}`;$("rt").textContent=sp+" מתוך 10"+(sp==10?" (רגיל)":sp<=3?" 🐢":"");
  localStorage.setItem("pos:"+S[0],i);const u=new SpeechSynthesisUtterance(s);u.lang="en-US";u.rate=rate;const v=voice();if(v)u.voice=v;
  speaking=true;stopRec();u.onend=u.onerror=()=>{speaking=false;setTimeout(startRec,250)};speechSynthesis.speak(u)}
 function cmd(c){if(c=="next"){if(i<S.length-1){i++;say()}else{$("sent").textContent="🎉 סיימת את כל הטקסט! Well done!";speakDone()}}
