@@ -23,7 +23,15 @@ small{color:#667}
 </style></head><body>
 <header><h1>🗣️ חזור אחריי</h1><p>האפליקציה מקריאה משפט, אתה חוזר, ואומר next / again / slowly</p></header>
 <main>
-<div id="setup" class="box">
+<div id="login" class="box hide" style="max-width:420px;margin:30px auto;text-align:center">
+<h2 style="margin-top:0">👋 כניסה</h2>
+<input type="text" id="lname" placeholder="השם שלך" style="width:100%;padding:12px;font-size:18px;border:1px solid var(--line);border-radius:8px;margin-bottom:10px">
+<input type="password" id="lpass" placeholder="סיסמה" style="width:100%;padding:12px;font-size:18px;border:1px solid var(--line);border-radius:8px;margin-bottom:10px" onkeydown="if(event.key=='Enter')login()">
+<button class="btn" style="width:100%" onclick="login()">כניסה</button>
+<p><small>משתמש חדש? פשוט כותבים שם וסיסמה, והחשבון נוצר אוטומטית.</small></p></div>
+<div id="userbar" class="row hide" style="justify-content:space-between;margin-bottom:10px"><b id="uname"></b><button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="logout()">יציאה</button></div>
+<div id="plbox" class="box hide"><b>📚 רשימת ההשמעה שלי</b><div id="pl"></div></div>
+<div id="setup" class="box hide">
 <b>1. הדבק טקסט באנגלית</b> <small>(מאמר, שיר, כל דבר)</small>
 <textarea id="txt" placeholder="Paste your English text here..."></textarea>
 <div class="row"><b>או קישור למאמר:</b></div>
@@ -53,7 +61,7 @@ small{color:#667}
 <button class="btn big sec" onclick="cmd('stop')">⏸️ עצור/המשך</button>
 </div>
 <div class="row"><b>מהירות:</b> <span id="spd"></span></div>
-<div class="row"><small>מהירות נוכחית: <span id="rt"></span></small> <button class="btn sec" style="margin-inline-start:auto" onclick="back()">✏️ טקסט חדש</button></div>
+<div class="row"><small>מהירות נוכחית: <span id="rt"></span></small> <button class="btn sec" style="margin-inline-start:auto" onclick="back()">📚 לרשימה / טקסט חדש</button></div>
 <p><small id="help"></small></p>
 </div>
 <p><small>הזיהוי הקולי עובד בדפדפן Chrome (אנדרואיד ומחשב). בפעם הראשונה הדפדפן יבקש רשות להשתמש במיקרופון. מומלץ להשתמש באוזניות, כדי שהמיקרופון לא ישמע את ההקראה.</small></p>
@@ -74,12 +82,24 @@ async function loadUrl(){const u=$("url").value.trim();if(!u)return;const m=$("u
   t=t.replace(/^[\s\S]*?Markdown Content:\s*/,"").replace(/!\[[^\]]*\]\([^)]*\)/g,"").replace(/\[([^\]]*)\]\([^)]*\)/g,"$1").replace(/^[#>*\-\s]+/gm,"").replace(/\n{2,}/g,"\n\n");
   $("txt").value=t.trim();$("lines").checked=false;m.innerHTML="<small>✅ נטען. כדאי לעבור על הטקסט ולמחוק חלקים לא רלוונטיים (תפריטים, פרסומות).</small>"}
  catch(e){m.innerHTML="<small>⚠️ לא הצלחתי לטעון מהאתר הזה. פתח את המאמר, העתק את הטקסט והדבק אותו בתיבה.</small>"}}
-function start(){S=split($("txt").value);if(!S.length)return alert("הדבק טקסט קודם");lang=document.querySelector("input[name=cl]:checked").value;
- i=+(localStorage.getItem("pos:"+S[0])||0);if(i>=S.length)i=0;
+let user=localStorage.getItem("user")||"",cur=null;
+const PK=()=>"pl:"+user.toLowerCase();const getPL=()=>JSON.parse(localStorage.getItem(PK())||"[]");const putPL=p=>localStorage.setItem(PK(),JSON.stringify(p));
+function login(){const n=$("lname").value.trim(),p=$("lpass").value;if(!n)return alert("כתוב שם");if(p!=="12345")return alert("סיסמה שגויה");user=n;localStorage.setItem("user",n);home()}
+function logout(){back(true);user="";localStorage.removeItem("user");home()}
+function home(){const in_=!!user;$("login").classList.toggle("hide",in_);["userbar","plbox","setup"].forEach(id=>$(id).classList.toggle("hide",!in_));$("play").classList.add("hide");
+ if(!in_){$("lname").value="";$("lpass").value="";return}$("uname").textContent="שלום, "+user+" 👋";drawPL()}
+function drawPL(){const p=getPL();$("pl").innerHTML=p.length?p.map(x=>`<div class="row" style="border-bottom:1px solid var(--line);padding:6px 0;margin:0"><span style="flex:1;direction:ltr;text-align:left">${x.title.replace(/</g,"&lt;")}<br><small>משפט ${Math.min((x.pos||0)+1,x.n)} מתוך ${x.n}</small></span><button class="btn" style="padding:8px 14px" onclick="openPL('${x.id}')">▶️</button><button class="btn sec" style="padding:8px 12px;border-color:#b91c1c;color:#b91c1c" onclick="delPL('${x.id}')">🗑️ מחק</button></div>`).join(""):"<p><small>עדיין אין טקסטים. הדבק טקסט למטה ולחץ התחל, והוא יישמר כאן.</small></p>"}
+function openPL(id){const x=getPL().find(y=>y.id==id);if(!x)return;$("txt").value=x.text;$("lines").checked=x.lines;cur=id;start(x.pos||0)}
+function delPL(id){const x=getPL().find(y=>y.id==id);if(!x||!confirm("למחוק את \""+x.title+"\"?"))return;putPL(getPL().filter(y=>y.id!=id));drawPL()}
+function savePos(){if(!cur)return;const p=getPL(),x=p.find(y=>y.id==cur);if(x){x.pos=i;putPL(p)}}
+function start(at){S=split($("txt").value);if(!S.length)return alert("הדבק טקסט קודם");lang=document.querySelector("input[name=cl]:checked").value;
+ const text=$("txt").value.trim();let p=getPL(),x=p.find(y=>y.text==text);
+ if(!x){x={id:Date.now().toString(36),title:S[0].slice(0,60),text,lines:$("lines").checked,n:S.length,pos:0};p.unshift(x);putPL(p)}
+ cur=x.id;i=typeof at=="number"?at:(x.pos||0);if(i>=S.length)i=0;$("plbox").classList.add("hide");
  $("setup").classList.add("hide");$("play").classList.remove("hide");
  $("help").textContent=lang=="en"?"אמור: next (הבא) · again (שוב) · slowly (לאט) · faster (מהר) · normal (רגיל) · back (הקודם) · stop (עצור) · continue (המשך)":"אמור: הבא · חזור · לאט · מהר · רגיל · הקודם · עצור · המשך";
  initRec();setSp(sp);say()}
-function back(){speechSynthesis.cancel();stopRec();$("play").classList.add("hide");$("setup").classList.remove("hide")}
+function back(q){speechSynthesis.cancel();stopRec();$("play").classList.add("hide");if(!q){$("setup").classList.remove("hide");$("plbox").classList.remove("hide");$("txt").value="";cur=null;drawPL()}}
 function voice(){const v=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));return v.find(v=>/Google US|Samantha|Aria|Jenny/i.test(v.name))||v.find(v=>/en-US/i.test(v.lang))||v[0]}
 const TC=JSON.parse(localStorage.getItem("trc")||"{}");
 async function tr(s){if(TC[s])return TC[s];let t="";
@@ -88,7 +108,7 @@ async function tr(s){if(TC[s])return TC[s];let t="";
  if(t){TC[s]=t;try{localStorage.setItem("trc",JSON.stringify(TC))}catch(e){}}return t}
 async function showTr(){const el=$("tr");if(!$("showtr").checked){el.textContent="";return}const s=S[i];el.textContent="…";const t=await tr(s);if(S[i]==s)el.textContent=t||"(התרגום לא זמין כרגע)";if(S[i+1])tr(S[i+1])}
 function say(){speechSynthesis.cancel();paused=false;const s=S[i];$("sent").textContent=s;showTr();$("prog").textContent=`משפט ${i+1} מתוך ${S.length}`;$("rt").textContent=sp+" מתוך 10"+(sp==10?" (רגיל)":sp<=3?" 🐢":"");
- localStorage.setItem("pos:"+S[0],i);const u=new SpeechSynthesisUtterance(s);u.lang="en-US";u.rate=rate;const v=voice();if(v)u.voice=v;
+ savePos();const u=new SpeechSynthesisUtterance(s);u.lang="en-US";u.rate=rate;const v=voice();if(v)u.voice=v;
  speaking=true;stopRec();u.onend=u.onerror=()=>{speaking=false;setTimeout(startRec,250)};speechSynthesis.speak(u)}
 function cmd(c){if(c=="next"){if(i<S.length-1){i++;say()}else{$("sent").textContent="🎉 סיימת את כל הטקסט! Well done!";speakDone()}}
  else if(c=="again")say();else if(c=="prev"){if(i>0)i--;say()}
@@ -107,5 +127,5 @@ function initRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognit
  rec.onerror=e=>{if(e.error=="not-allowed"||e.error=="service-not-allowed"){$("mic").textContent="🎤 אין הרשאת מיקרופון – לחץ על המנעול ליד הכתובת ואשר מיקרופון";rec=null}}}
 function startRec(){if(!rec||recOn||speaking)return;rec.lang=lang=="he"?"he-IL":"en-US";try{rec.start();recOn=true;$("mic").classList.add("on");if(!paused)$("mic").textContent="🎤 מקשיב..."}catch(e){}}
 function stopRec(){if(rec&&recOn){try{rec.abort()}catch(e){}recOn=false;$("mic").classList.remove("on");$("mic").textContent="🔊 מקריא..."}}
-speechSynthesis.onvoiceschanged=()=>{};
+speechSynthesis.onvoiceschanged=()=>{};home();
 </script></body></html>
