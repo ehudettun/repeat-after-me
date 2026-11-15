@@ -47,19 +47,23 @@ small{color:#667}
 </div>
 <div class="row">
 <button class="btn big sec" onclick="cmd('slow')">🐢 לאט</button>
-<button class="btn big sec" onclick="cmd('normal')">🚶 רגיל</button>
+<button class="btn big sec" onclick="cmd('faster')">🐇 מהר</button>
 <button class="btn big sec" onclick="cmd('stop')">⏸️ עצור/המשך</button>
 </div>
-<div class="row"><small>מהירות: <span id="rt"></span></small> <button class="btn sec" style="margin-inline-start:auto" onclick="back()">✏️ טקסט חדש</button></div>
+<div class="row"><b>מהירות:</b> <span id="spd"></span></div>
+<div class="row"><small>מהירות נוכחית: <span id="rt"></span></small> <button class="btn sec" style="margin-inline-start:auto" onclick="back()">✏️ טקסט חדש</button></div>
 <p><small id="help"></small></p>
 </div>
 <p><small>הזיהוי הקולי עובד בדפדפן Chrome (אנדרואיד ומחשב). בפעם הראשונה הדפדפן יבקש רשות להשתמש במיקרופון. מומלץ להשתמש באוזניות, כדי שהמיקרופון לא ישמע את ההקראה.</small></p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
-let S=[],i=0,rate=0.95,paused=false,speaking=false,rec=null,recOn=false,lang="en";
-const CMD={en:{next:["next","nex","necks","text"],again:["again","repeat","agin","a gain"],slow:["slowly","slow","slower"],normal:["normal","faster","fast"],prev:["back","previous","before"],stop:["stop","pause"],go:["continue","go","resume","start"]},
- he:{next:["הבא","הבאה","קדימה","נקסט"],again:["חזור","שוב","עוד פעם","אגיין"],slow:["לאט","יותר לאט","לאט יותר","סלואו"],normal:["רגיל","מהר","מהר יותר"],prev:["הקודם","אחורה","הקודמת"],stop:["עצור","הפסק","סטופ"],go:["המשך","תמשיך"]}};
+let sp=+(localStorage.getItem("spd")||10);const R2=n=>0.35+(n-1)*0.07;
+function setSp(n){sp=Math.max(1,Math.min(10,n));localStorage.setItem("spd",sp);rate=R2(sp);drawSp()}
+function drawSp(){$("spd").innerHTML=[...Array(10)].map((_,k)=>`<button class="btn ${k+1==sp?"":"sec"}" style="padding:8px 0;width:38px" onclick="setSp(${k+1});say()">${k+1}</button>`).join("")}
+let lastCmd=0,S=[],i=0,rate=0.95,paused=false,speaking=false,rec=null,recOn=false,lang="en";
+const CMD={en:{next:["next","nex","necks","text"],again:["again","repeat","agin","a gain"],slow:["slowly","slow","slower"],normal:["normal","regular"],faster:["faster","fast","quicker"],prev:["back","previous","before"],stop:["stop","pause"],go:["continue","go","resume","start"]},
+ he:{next:["הבא","הבאה","קדימה","נקסט"],again:["חזור","שוב","עוד פעם","אגיין"],slow:["לאט","יותר לאט","לאט יותר","סלואו"],normal:["רגיל"],faster:["מהר","מהר יותר","יותר מהר"],prev:["הקודם","אחורה","הקודמת"],stop:["עצור","הפסק","סטופ"],go:["המשך","תמשיך"]}};
 function clean(t){return t.replace(/\r/g,"").split("\n").filter(l=>{l=l.trim();return l&&!/^\d{1,2}:\d{2}(:\d{2})?$/.test(l)&&!/(שניות|שניה|דקות|דקה|seconds?|minutes?)\s*$/i.test(l)&&!/^\[[^\]]*\]$/.test(l)&&!/^[A-Za-z]\]?$|^c\]$/.test(l)}).map(l=>l.replace(/\[(Music|Applause|Laughter)\]/gi,"").trim()).join("\n")}
 function split(t){t=clean(t).trim();let parts=$("lines").checked?t.split(/\n+/):t.replace(/\n+/g," ").split(/(?<=[.!?;])\s+(?=["'“(A-Z0-9])/);
  return parts.map(s=>s.trim()).filter(s=>s.length>1)}
@@ -71,27 +75,28 @@ async function loadUrl(){const u=$("url").value.trim();if(!u)return;const m=$("u
 function start(){S=split($("txt").value);if(!S.length)return alert("הדבק טקסט קודם");lang=document.querySelector("input[name=cl]:checked").value;
  i=+(localStorage.getItem("pos:"+S[0])||0);if(i>=S.length)i=0;
  $("setup").classList.add("hide");$("play").classList.remove("hide");
- $("help").textContent=lang=="en"?"אמור: next (הבא) · again (שוב) · slowly (לאט) · normal (רגיל) · back (הקודם) · stop (עצור) · continue (המשך)":"אמור: הבא · חזור · לאט · רגיל · הקודם · עצור · המשך";
- initRec();say()}
+ $("help").textContent=lang=="en"?"אמור: next (הבא) · again (שוב) · slowly (לאט) · faster (מהר) · normal (רגיל) · back (הקודם) · stop (עצור) · continue (המשך)":"אמור: הבא · חזור · לאט · מהר · רגיל · הקודם · עצור · המשך";
+ initRec();setSp(sp);say()}
 function back(){speechSynthesis.cancel();stopRec();$("play").classList.add("hide");$("setup").classList.remove("hide")}
 function voice(){const v=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));return v.find(v=>/Google US|Samantha|Aria|Jenny/i.test(v.name))||v.find(v=>/en-US/i.test(v.lang))||v[0]}
-function say(){speechSynthesis.cancel();paused=false;const s=S[i];$("sent").textContent=s;$("prog").textContent=`משפט ${i+1} מתוך ${S.length}`;$("rt").textContent=rate<0.8?"איטית 🐢":"רגילה";
+function say(){speechSynthesis.cancel();paused=false;const s=S[i];$("sent").textContent=s;$("prog").textContent=`משפט ${i+1} מתוך ${S.length}`;$("rt").textContent=sp+" מתוך 10"+(sp==10?" (רגיל)":sp<=3?" 🐢":"");
  localStorage.setItem("pos:"+S[0],i);const u=new SpeechSynthesisUtterance(s);u.lang="en-US";u.rate=rate;const v=voice();if(v)u.voice=v;
  speaking=true;stopRec();u.onend=u.onerror=()=>{speaking=false;setTimeout(startRec,250)};speechSynthesis.speak(u)}
 function cmd(c){if(c=="next"){if(i<S.length-1){i++;say()}else{$("sent").textContent="🎉 סיימת את כל הטקסט! Well done!";speakDone()}}
  else if(c=="again")say();else if(c=="prev"){if(i>0)i--;say()}
- else if(c=="slow"){rate=0.65;say()}else if(c=="normal"){rate=0.95;say()}
+ else if(c=="slow"){setSp(sp-2);say()}else if(c=="faster"){setSp(sp+2);say()}else if(c=="normal"){setSp(10);say()}
  else if(c=="stop"){if(paused){paused=false;say()}else{paused=true;speechSynthesis.cancel();$("mic").textContent="⏸️ מושהה – אמור continue / המשך"}}
  else if(c=="go"){if(paused)say()}}
 function speakDone(){const u=new SpeechSynthesisUtterance("Well done!");u.lang="en-US";speechSynthesis.speak(u)}
-function match(t){t=t.toLowerCase().replace(/[.,!?]/g,"").trim();const w=t.split(/\s+/);if(w.length>4)return null;
- for(const [c,list] of Object.entries(CMD[lang]))for(const k of list)if(t==k||t.endsWith(" "+k)||t.startsWith(k+" ")||(lang=="he"&&t.includes(k)))return c;return null}
+function match(t){t=t.toLowerCase().replace(/[.,!?״"']/g,"").trim();const w=t.split(/\s+/),tail=w.slice(-3).join(" ");
+ for(const [c,list] of Object.entries(CMD[lang]))for(const k of list){if(tail==k||tail.endsWith(" "+k)||t==k)return c;if(w.length<=4&&(t.includes(k)))return c}return null}
 function initRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R){$("mic").textContent="🎤 זיהוי קולי לא נתמך, השתמש בכפתורים";return}
- if(rec)return;rec=new R();rec.continuous=true;rec.interimResults=false;
- rec.onresult=e=>{for(let k=e.resultIndex;k<e.results.length;k++){if(!e.results[k].isFinal)continue;const t=e.results[k][0].transcript;$("heard").textContent="🎧 "+t;
-  const c=match(t);if(c&&(!paused||c=="go"||c=="stop"||c=="next"||c=="again"))cmd(c)}};
+ if(rec)return;rec=new R();rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=3;
+ rec.onresult=e=>{for(let k=e.resultIndex;k<e.results.length;k++){const res=e.results[k];$("heard").textContent="🎧 שמעתי: "+res[0].transcript;
+  let c=null;for(let a=0;a<res.length&&!c;a++)c=match(res[a].transcript);
+  if(c&&Date.now()-lastCmd>1500){lastCmd=Date.now();try{rec.abort()}catch(_){}cmd(c);return}}};
  rec.onend=()=>{recOn=false;$("mic").classList.remove("on");if(!speaking&&!$("play").classList.contains("hide"))setTimeout(startRec,300)};
- rec.onerror=e=>{if(e.error=="not-allowed")$("mic").textContent="🎤 אין הרשאת מיקרופון"}}
+ rec.onerror=e=>{if(e.error=="not-allowed"||e.error=="service-not-allowed"){$("mic").textContent="🎤 אין הרשאת מיקרופון – לחץ על המנעול ליד הכתובת ואשר מיקרופון";rec=null}}}
 function startRec(){if(!rec||recOn||speaking)return;rec.lang=lang=="he"?"he-IL":"en-US";try{rec.start();recOn=true;$("mic").classList.add("on");if(!paused)$("mic").textContent="🎤 מקשיב..."}catch(e){}}
 function stopRec(){if(rec&&recOn){try{rec.abort()}catch(e){}recOn=false;$("mic").classList.remove("on");$("mic").textContent="🔊 מקריא..."}}
 speechSynthesis.onvoiceschanged=()=>{};
