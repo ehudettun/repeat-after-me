@@ -29,7 +29,7 @@ small{color:#667}
 <input type="password" id="lpass" placeholder="סיסמה" style="width:100%;padding:12px;font-size:18px;border:1px solid var(--line);border-radius:8px;margin-bottom:10px" onkeydown="if(event.key=='Enter')login()">
 <button class="btn" style="width:100%" onclick="login()">כניסה</button>
 <p><small>משתמש חדש? פשוט כותבים שם וסיסמה, והחשבון נוצר אוטומטית.</small></p></div>
-<div id="userbar" class="row hide" style="justify-content:space-between;margin-bottom:10px"><b id="uname"></b><img src="logo25.png" alt="אבני דרך בתקופת שינוי" style="height:40px;width:auto"><span><button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="showLangs()" id="lpair">🌍</button> <button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="logout()">יציאה</button></span></div>
+<div id="userbar" class="row hide" style="justify-content:space-between;margin-bottom:10px"><b id="uname"></b><img src="logo25.png" alt="אבני דרך בתקופת שינוי" style="height:40px;width:auto"><span><button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="showLangs()" id="lpair">🌍</button> <button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="logout()">התנתקות</button></span></div>
 <div id="langs" class="box hide" style="max-width:520px;margin:20px auto;text-align:center">
 <h2 style="margin-top:0">🌍 בחר שפות<br><small style="font-weight:400">Choose languages</small></h2>
 <div style="text-align:right"><b>אני רוצה לתרגל (שפת הטקסט)<br><span dir="ltr">I want to practice (text language)</span></b><select id="lsrc" style="width:100%;padding:12px;font-size:18px;margin:6px 0 14px;border-radius:8px"></select>
@@ -38,7 +38,7 @@ small{color:#667}
 <div id="plbox" class="box hide"><b>📚 רשימת ההשמעה שלי</b><div id="pl"></div></div>
 <div id="setup" class="box hide">
 <button class="btn sec" style="width:100%;margin-bottom:12px" onclick="showLangs()">🌍 חזור לבחירת שפות / Change languages</button>
-<b>1. הדבק טקסט ב<span id="srcname">אנגלית</span></b> <small>(מאמר, שיר, כל דבר)</small>
+<b>1. הדבק טקסט. שפה: <span id="srcname">אנגלית</span></b> <small>(מאמר, שיר, כל דבר)</small>
 <textarea id="txt" placeholder="Paste your text here..."></textarea>
 <div class="row"><b>או קישור למאמר:</b></div>
 <div class="row"><input type="url" id="url" placeholder="https://..."><button class="btn sec" onclick="loadUrl()">טען מהקישור</button></div>
@@ -46,7 +46,7 @@ small{color:#667}
 <div class="row"><label><input type="checkbox" id="lines" checked> שיר: כל שורה היא משפט</label></div>
 <div class="row"><b>שפת הפקודות הקוליות:</b>
 <label><input type="radio" name="cl" value="en" checked> English (next / again / slowly)</label>
-<label><input type="radio" name="cl" value="he"> עברית (הבא / חזור / לאט)</label></div>
+<label><input type="radio" name="cl" value="he"> עברית <span class="noi">(הבא / חזור / לאט)</span></label></div>
 <div class="row"><button class="btn" onclick="start()">▶️ התחל</button></div>
 </div>
 
@@ -74,6 +74,20 @@ small{color:#667}
 <p><small>הזיהוי הקולי עובד בדפדפן Chrome (אנדרואיד ומחשב). בפעם הראשונה הדפדפן יבקש רשות להשתמש במיקרופון. מומלץ להשתמש באוזניות, כדי שהמיקרופון לא ישמע את ההקראה.</small></p>
 </main>
 <script>
+(function(){const HE=/[֐-׿]/,SKIP="#sent,#tr,#heard,.noi,textarea,script,style,#login,#langs";let busy=0,q=new Set(),tm=0;
+const C=JSON.parse(localStorage.getItem("i18n")||"{}");const save=()=>{try{localStorage.setItem("i18n",JSON.stringify(C))}catch(e){}};
+const L=()=>typeof dst=="string"?dst:"he";
+async function tr(t,l){const k=l+"|"+t;if(C[k])return C[k];try{const r=await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=iw&tl="+l+"&dt=t&q="+encodeURIComponent(t));const j=await r.json();const o=j[0].map(x=>x[0]).join("");if(o){C[k]=o;save();return o}}catch(e){}return null}
+function skip(el){return !el||el.closest&&el.closest(SKIP)}
+function nodes(root){const out=[];const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(skip(n.parentElement))continue;const o=n.__o??n.nodeValue;if(HE.test(o))out.push(n)}return out}
+async function apply(root){const l=L();busy++;const P=[];try{for(const n of nodes(root||document.body)){if(n.__o==null)n.__o=n.nodeValue;const o=n.__o;if(l=="he"){if(n.nodeValue!=o)n.nodeValue=o;continue}
+const m=o.match(/^(\s*)([\s\S]*?)(\s*)$/);P.push(tr(m[2],l).then(t=>{if(t&&n.__o===o&&L()==l)n.nodeValue=m[1]+t+m[3]}))}await Promise.all(P);
+for(const e of document.querySelectorAll("[placeholder]")){if(skip(e))continue;if(e.__op==null)e.__op=e.placeholder;if(!HE.test(e.__op))continue;if(l=="he")e.placeholder=e.__op;else{const t=await tr(e.__op,l);if(t)e.placeholder=t}}
+document.body.dir=l=="he"||l=="ar"?"rtl":"ltr"}finally{busy--}}
+window.i18nApply=apply;
+new MutationObserver(ms=>{if(busy)return;for(const m of ms){if(m.type=="characterData"&&HE.test(m.target.nodeValue)){m.target.__o=null}}clearTimeout(tm);tm=setTimeout(()=>apply(),150)}).observe(document.body,{subtree:true,childList:true,characterData:true});
+let last=L();setInterval(()=>{if(L()!=last){last=L();apply()}},500);setTimeout(()=>apply(),300)})();
+</script><script>
 const $=id=>document.getElementById(id);
 let sp=+(localStorage.getItem("spd")||10);const R2=n=>0.35+(n-1)*0.07;
 function setSp(n){sp=Math.max(1,Math.min(10,n));localStorage.setItem("spd",sp);rate=R2(sp);drawSp()}
@@ -103,7 +117,7 @@ function login(){const n=$("lname").value.trim(),p=$("lpass").value;if(!n)return
 function logout(){back(true);user="";localStorage.removeItem("user");home()}
 function home(){const in_=!!user;$("langs").classList.add("hide");if(in_&&!loadLangs())return($("login").classList.add("hide"),showLangs());if(in_)applyLangs();$("login").classList.toggle("hide",in_);["userbar","plbox","setup"].forEach(id=>$(id).classList.toggle("hide",!in_));$("play").classList.add("hide");
  if(!in_){$("lname").value="";$("lpass").value="";return}$("uname").textContent="שלום, "+user+" 👋";drawPL()}
-function drawPL(){const p=getPL();$("pl").innerHTML=p.length?p.map(x=>`<div class="row" style="border-bottom:1px solid var(--line);padding:6px 0;margin:0"><span style="flex:1;direction:ltr;text-align:left">${x.title.replace(/</g,"&lt;")}<br><small>משפט ${Math.min((x.pos||0)+1,x.n)} מתוך ${x.n}</small></span><button class="btn" style="padding:8px 14px" onclick="openPL('${x.id}')">▶️</button><button class="btn sec" style="padding:8px 12px;border-color:#b91c1c;color:#b91c1c" onclick="delPL('${x.id}')">🗑️ מחק</button></div>`).join(""):"<p><small>עדיין אין טקסטים. הדבק טקסט למטה ולחץ התחל, והוא יישמר כאן.</small></p>"}
+function drawPL(){const p=getPL();$("pl").innerHTML=p.length?p.map(x=>`<div class="row" style="border-bottom:1px solid var(--line);padding:6px 0;margin:0"><span style="flex:1;direction:ltr;text-align:left"><span class="noi">${x.title.replace(/</g,"&lt;")}</span><br><small>משפט ${Math.min((x.pos||0)+1,x.n)} מתוך ${x.n}</small></span><button class="btn" style="padding:8px 14px" onclick="openPL('${x.id}')">▶️</button><button class="btn sec" style="padding:8px 12px;border-color:#b91c1c;color:#b91c1c" onclick="delPL('${x.id}')">🗑️ מחק</button></div>`).join(""):"<p><small>עדיין אין טקסטים. הדבק טקסט למטה ולחץ התחל, והוא יישמר כאן.</small></p>"}
 function openPL(id){const x=getPL().find(y=>y.id==id);if(!x)return;$("txt").value=x.text;$("lines").checked=x.lines;if(x.src){src=x.src;dst=x.dst;applyLangs()}cur=id;start(x.pos||0)}
 function delPL(id){const x=getPL().find(y=>y.id==id);if(!x||!confirm("למחוק את \""+x.title+"\"?"))return;putPL(getPL().filter(y=>y.id!=id));drawPL()}
 function savePos(){if(!cur)return;const p=getPL(),x=p.find(y=>y.id==cur);if(x){x.pos=i;putPL(p)}}
@@ -162,5 +176,5 @@ function grade(heard){return;if(rec&&rec.lang!==LN(src)[2])return;const T=S[i].s
 function startRec(){if(!rec||recOn||speaking)return;rec.lang=(lang=="he"&&src!="he")?"he-IL":(lang=="en"&&src!="en"&&false)?"en-US":LN(src)[2];try{rec.start();recOn=true;$("mic").classList.add("on");if(!paused)$("mic").textContent="🎤 מקשיב..."}catch(e){}}
 function stopRec(){if(rec&&recOn){try{rec.abort()}catch(e){}recOn=false;$("mic").classList.remove("on");$("mic").textContent="🔊 מקריא..."}}
 speechSynthesis.onvoiceschanged=()=>{};home();if(user){loadLangs();$("login").classList.add("hide");showLangs()}
-const APPV="26";fetch(location.pathname+"?nc="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APPV="(\d+)"/);if(m&&m[1]!==APPV&&!sessionStorage.getItem("rl"+m[1])){sessionStorage.setItem("rl"+m[1],1);location.replace(location.pathname+"?v="+m[1])}}).catch(()=>{});
+const APPV="28";fetch(location.pathname+"?nc="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APPV="(\d+)"/);if(m&&m[1]!==APPV&&!sessionStorage.getItem("rl"+m[1])){sessionStorage.setItem("rl"+m[1],1);location.replace(location.pathname+"?v="+m[1])}}).catch(()=>{});
 </script></body></html>
