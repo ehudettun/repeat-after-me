@@ -29,7 +29,7 @@ small{color:#667}
 <input type="password" id="lpass" placeholder="סיסמה" style="width:100%;padding:12px;font-size:18px;border:1px solid var(--line);border-radius:8px;margin-bottom:10px" onkeydown="if(event.key=='Enter')login()">
 <button class="btn" style="width:100%" onclick="login()">כניסה</button>
 <p><small>משתמש חדש? פשוט כותבים שם וסיסמה, והחשבון נוצר אוטומטית.</small></p></div>
-<div id="userbar" class="row hide" style="justify-content:space-between;margin-bottom:10px"><b id="uname"></b><span><button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="showLangs()" id="lpair">🌍</button> <button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="logout()">יציאה</button></span></div>
+<div id="userbar" class="row hide" style="justify-content:space-between;margin-bottom:10px"><b id="uname"></b><img src="logo.png" alt="אבני דרך בתקופת שינוי" style="height:34px;width:auto;opacity:.85"><span><button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="showLangs()" id="lpair">🌍</button> <button class="btn sec" style="padding:6px 12px;font-size:14px" onclick="logout()">יציאה</button></span></div>
 <div id="langs" class="box hide" style="max-width:520px;margin:20px auto;text-align:center">
 <h2 style="margin-top:0">🌍 בחר שפות<br><small style="font-weight:400">Choose languages</small></h2>
 <div style="text-align:right"><b>אני רוצה לתרגל (שפת הטקסט)<br><span dir="ltr">I want to practice (text language)</span></b><select id="lsrc" style="width:100%;padding:12px;font-size:18px;margin:6px 0 14px;border-radius:8px"></select>
@@ -162,5 +162,5 @@ function grade(heard){return;if(rec&&rec.lang!==LN(src)[2])return;const T=S[i].s
 function startRec(){if(!rec||recOn||speaking)return;rec.lang=(lang=="he"&&src!="he")?"he-IL":(lang=="en"&&src!="en"&&false)?"en-US":LN(src)[2];try{rec.start();recOn=true;$("mic").classList.add("on");if(!paused)$("mic").textContent="🎤 מקשיב..."}catch(e){}}
 function stopRec(){if(rec&&recOn){try{rec.abort()}catch(e){}recOn=false;$("mic").classList.remove("on");$("mic").textContent="🔊 מקריא..."}}
 speechSynthesis.onvoiceschanged=()=>{};home();if(user){loadLangs();$("login").classList.add("hide");showLangs()}
-const APPV="22";fetch(location.pathname+"?nc="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APPV="(\d+)"/);if(m&&m[1]!==APPV&&!sessionStorage.getItem("rl"+m[1])){sessionStorage.setItem("rl"+m[1],1);location.replace(location.pathname+"?v="+m[1])}}).catch(()=>{});
-</script><footer style="text-align:center;margin:40px 0 16px;opacity:.85"><img src="logo.png" alt="אבני דרך בתקופת שינוי" style="height:44px;width:auto"></footer></body></html>
+const APPV="23";fetch(location.pathname+"?nc="+Date.now(),{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/const APPV="(\d+)"/);if(m&&m[1]!==APPV&&!sessionStorage.getItem("rl"+m[1])){sessionStorage.setItem("rl"+m[1],1);location.replace(location.pathname+"?v="+m[1])}}).catch(()=>{});
+</script></body></html>
